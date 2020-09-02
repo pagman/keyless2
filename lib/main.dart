@@ -279,6 +279,13 @@ Widget build(BuildContext context) {
             ),],
           ),
     ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        startScan();
+      },
+      child: Icon(Icons.navigation),
+      backgroundColor: Colors.green,
+    ),
   );
 }
 
