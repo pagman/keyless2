@@ -1,15 +1,15 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'dart:async';
 import 'dart:convert';
-
-import 'package:control_pad/control_pad.dart';
-import 'package:control_pad/models/gestures.dart';
+import 'package:slider_button/slider_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-
-
+import 'package:flutter_picker/flutter_picker.dart';
+import 'PickerData.dart';
+import 'pickervalue.dart';
 final FlutterBlue flutterBlue = FlutterBlue.instance;
 
 void main() {
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Hellas Digital Keyless Access',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -46,10 +46,11 @@ final String TARGET_DEVICE_NAME = "myESP32";
 
 FlutterBlue flutterBlue = FlutterBlue.instance;
 StreamSubscription<ScanResult> scanSubScription;
-
+final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 BluetoothDevice targetDevice;
 BluetoothCharacteristic targetCharacteristic;
-
+String _slidetext = "Slide to Disable";
+int _stateflag = 0;
 String connectionText = "";
 
 @override
@@ -142,24 +143,71 @@ writeData(String data) {
 
 @override
 Widget build(BuildContext context) {
-  JoystickDirectionCallback onDirectionChanged(
-      double degrees, double distance) {
-    String data =
-        "Degree : ${degrees.toStringAsFixed(2)}, distance : ${distance.toStringAsFixed(2)}";
-    print(data);
-    writeData(data);
-  }
-
-  PadButtonPressedCallback padBUttonPressedCallback(
-      int buttonIndex, Gestures gesture) {
-    String data = "buttonIndex : ${buttonIndex}";
-    print(data);
-    writeData(data);
-  }
 
   return Scaffold(
+    key: _scaffoldKey,
     appBar: AppBar(
       title: Text(connectionText),
+      backgroundColor: Color(0xffB8141F),
+    ),
+    drawer: Drawer(
+      // Add a ListView to the drawer. This ensures the user can scroll
+      // through the options in the drawer if there isn't enough vertical
+      // space to fit everything.
+      child: ListView(
+        // Important: Remove any padding from the ListView.
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            child: new Center(
+                child: new Text(
+                  "Settings",
+                  style: new TextStyle(
+                      fontWeight: FontWeight.w500, fontSize: 15.0, color: Colors.white),
+                )),
+            decoration: new BoxDecoration(color: Color(0xffB8141F)),
+          ),
+          Card(
+            child: ListTile(
+              title: new Center(
+                  child: new Text(
+                    "Set Time",
+                    style: new TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 15.0),
+                  )),
+              onTap: () {
+                showPicker(context);
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              title: new Center(
+                  child: new Text(
+                    "Set Distance",
+                    style: new TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 15.0),
+                  )),
+              onTap: () {
+                // Update the state of the app.
+                // ...
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              title: new Center(
+                  child: new Text(
+                    "Sign Out",
+                    style: new TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 15.0),
+                  )),
+              onTap: () {
+              },
+            ),
+          ),
+        ],
+      ),
     ),
     body: Container(
       child: targetCharacteristic == null
@@ -170,17 +218,99 @@ Widget build(BuildContext context) {
         ),
       )
           : Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          JoystickView(
-            onDirectionChanged: onDirectionChanged,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                Center(
+                  child: SliderButton(
+                    dismissible: false,
+                    vibrationFlag: false,
+                    action: () {
+                      print(_stateflag);
+                      if(_stateflag == 0) {
+                        writeData("off0");
+                        setState(() {
+                          _slidetext = "Slide to Enable";
+                        });
+                        _stateflag = 1;
+                      }
+                      else if(_stateflag == 1) {
+                        writeData("on0");
+                        setState(() {
+                          _slidetext = "Slide to Disable";
+                        });
+                        _stateflag = 0;
+                      }
+                    },
+                    label: Text(
+                      _slidetext,
+                      style: TextStyle(
+                          color: Color(0xff4a4a4a), fontWeight: FontWeight.w500, fontSize: 17),
+                    ),
+                    icon: Text(
+                      "x",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 44,
+                      ),
+                    ),
+                  )
+                ),
+                Center(
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    child: FittedBox(
+                      child: FloatingActionButton(
+                        child: Icon(Icons.add),
+                        onPressed: () {
+                          print(pickervalue.s);
+                          writeData(pickervalue.s);
+                        },
+                        backgroundColor: Color(0xffB8141F),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),],
           ),
-          PadButtonsView(
-            padButtonPressedCallback: padBUttonPressedCallback,
-          ),
-        ],
-      ),
     ),
   );
+}
+
+showPicker(BuildContext context) {
+
+  Picker picker = Picker(
+      adapter: PickerDataAdapter<String>(pickerdata: JsonDecoder().convert(PickerData)),
+      changeToFirst: false,
+      textAlign: TextAlign.left,
+      textStyle: const TextStyle(color: Colors.blue , fontSize: 17.0),
+      selectedTextStyle: TextStyle(color: Colors.red, fontSize: 17.0),
+      columnPadding: const EdgeInsets.all(0.0),
+      onConfirm: (Picker picker, List value) {
+        print(value[0].toString());
+        if(value[0]==0){
+          //seconds
+          pickervalue.s = 'on'+(value[1]).toString();
+          print((value[1]+1).toString());
+          print(pickervalue.s);
+          print(picker.getSelectedValues());
+        }
+        else{
+          //minutes
+          print('minutes');
+          print(((value[1]+1)*60).toString());
+          pickervalue.s = 'on'+((value[1]+1)*60).toString();
+          print(((value[1]+1)*60).toString());
+          print(pickervalue.s);
+          print(picker.getSelectedValues());
+        }
+      }
+  );
+  picker.show(_scaffoldKey.currentState);
 }
 }

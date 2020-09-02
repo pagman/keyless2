@@ -22,7 +22,8 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
-  control_pad: ^1.0.0+2
+  flutter_picker: ^1.1.5
+  slider_button: ^0.5.0
   flutter_blue: ^0.7.2
   flutter:
     sdk: flutter
