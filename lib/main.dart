@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -53,6 +55,32 @@ String _slidetext = "Slide to Disable";
 int _stateflag = 0;
 String connectionText = "";
 
+Stream<String> numberStream() async* {
+  var random = Random();
+  var rssii = "0";
+
+  //print("saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+  while(true){
+    await Future.delayed(Duration(seconds: 5));
+    // Start scanning
+    flutterBlue.startScan(timeout: Duration(seconds: 4));
+
+// Listen to scan results
+    flutterBlue.scanResults.listen((results) {
+      // do something with scan results
+      for (ScanResult r in results) {
+        print('${r.device.name} found! rssi: ${r.rssi}');
+        rssii = r.rssi.toString();
+      }
+    });
+
+// Stop scanning
+    flutterBlue.stopScan();
+    yield rssii;
+  }
+}
+
+
 @override
 void initState() {
   super.initState();
@@ -63,22 +91,22 @@ startScan() {
   setState(() {
     connectionText = "Start Scanning";
   });
-
-  scanSubScription = flutterBlue.scan().listen((scanResult) {
+   scanSubScription = flutterBlue.scan().listen((scanResult) {
     if (scanResult.device.name == TARGET_DEVICE_NAME) {
       print('DEVICE found');
       stopScan();
       setState(() {
         connectionText = "Found Target Device";
       });
-
       targetDevice = scanResult.device;
       connectToDevice();
+      print(scanResult.rssi);
     }
   }, onDone: () => stopScan());
 }
 
 stopScan() {
+  print("scan stoped");
   scanSubScription?.cancel();
   scanSubScription = null;
 }
@@ -93,6 +121,7 @@ connectToDevice() async {
   await targetDevice.connect();
   print('DEVICE CONNECTED');
   setState(() {
+
     connectionText = "Device Connected";
   });
 
@@ -125,7 +154,7 @@ discoverServices() async {
         print("--------------");
         if (characteristic.uuid.toString() == CHARACTERISTIC_UUID) {
           targetCharacteristic = characteristic;
-          writeData("on3");
+          //writeData("on3");
           setState(() {
             connectionText = "All Ready with ${targetDevice.name}";
           });
@@ -133,6 +162,7 @@ discoverServices() async {
       });
     }
   });
+  disconnectFromDevice();
 }
 
 writeData(String data) {
@@ -223,6 +253,18 @@ Widget build(BuildContext context) {
               Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
+                Center(
+                  child: StreamBuilder(
+                      stream: numberStream(),
+                      builder: (context, snapshot){
+                        if(snapshot.hasError)
+                          return Text("Error");
+                        else if (snapshot.connectionState == ConnectionState.waiting)
+                          return CircularProgressIndicator();
+                        return Text("${snapshot.data}", style: Theme.of(context).textTheme.display1,);
+                      }
+                  )
+                ),
                 Center(
                   child: SliderButton(
                     dismissible: false,
