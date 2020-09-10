@@ -12,6 +12,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:flutter_picker/flutter_picker.dart';
 import 'PickerData.dart';
 import 'pickervalue.dart';
+import 'myDevices.dart';
 final FlutterBlue flutterBlue = FlutterBlue.instance;
 
 void main() {
@@ -28,7 +29,12 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MyHomePage(),
+        '/myDevices': (context) => myDevices(),
+
+      }
     );
   }
 }
@@ -54,29 +60,35 @@ BluetoothCharacteristic targetCharacteristic;
 String _slidetext = "Slide to Disable";
 int _stateflag = 0;
 String connectionText = "";
+int _disable = 0;
 
 Stream<String> numberStream() async* {
-  var random = Random();
-  var rssii = "0";
+  num distance = 0;
 
   //print("saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-  while(true){
-    await Future.delayed(Duration(seconds: 5));
+  while(_disable==1){
+    await Future.delayed(Duration(seconds: 4));
     // Start scanning
+    stopScan();
     flutterBlue.startScan(timeout: Duration(seconds: 4));
-
-// Listen to scan results
-    flutterBlue.scanResults.listen((results) {
+    flutterBlue.stopScan();
+    flutterBlue.scanResults.listen((results) async {
       // do something with scan results
       for (ScanResult r in results) {
-        print('${r.device.name} found! rssi: ${r.rssi}');
-        rssii = r.rssi.toString();
+        if(r.device.name == TARGET_DEVICE_NAME) {
+          print('${r.device.name} found! rssi: ${r.rssi}');
+          distance = pow(10.0,((-69.0-r.rssi)/(10*2)));
+          print(distance);
+          if(distance<1.0){
+            startScan();
+            //disconnectFromDevice();
+          }
+        }
       }
     });
-
 // Stop scanning
-    flutterBlue.stopScan();
-    yield rssii;
+
+    yield distance.toString();
   }
 }
 
@@ -98,8 +110,11 @@ startScan() {
       setState(() {
         connectionText = "Found Target Device";
       });
-      targetDevice = scanResult.device;
-      connectToDevice();
+      setState(() {
+        targetDevice = scanResult.device;
+        connectToDevice();
+      });
+
       print(scanResult.rssi);
     }
   }, onDone: () => stopScan());
@@ -154,7 +169,7 @@ discoverServices() async {
         print("--------------");
         if (characteristic.uuid.toString() == CHARACTERISTIC_UUID) {
           targetCharacteristic = characteristic;
-          //writeData("on3");
+          writeData("on3");
           setState(() {
             connectionText = "All Ready with ${targetDevice.name}";
           });
@@ -162,7 +177,7 @@ discoverServices() async {
       });
     }
   });
-  disconnectFromDevice();
+
 }
 
 writeData(String data) {
@@ -214,11 +229,13 @@ Widget build(BuildContext context) {
             child: ListTile(
               title: new Center(
                   child: new Text(
-                    "Set Distance",
+                    "My devices",
                     style: new TextStyle(
                         fontWeight: FontWeight.w500, fontSize: 15.0),
                   )),
               onTap: () {
+                disconnectFromDevice();
+                Navigator.pushNamed(context, '/myDevices');
                 // Update the state of the app.
                 // ...
               },
@@ -272,18 +289,27 @@ Widget build(BuildContext context) {
                     action: () {
                       print(_stateflag);
                       if(_stateflag == 0) {
-                        writeData("off0");
+                        //writeData("off0");
                         setState(() {
                           _slidetext = "Slide to Enable";
+                          _disable = 0;
+
                         });
                         _stateflag = 1;
                       }
                       else if(_stateflag == 1) {
-                        writeData("on0");
+                        //writeData("on0");
                         setState(() {
                           _slidetext = "Slide to Disable";
+                          disconnectFromDevice();
+                          setState(() {
+                            _disable = 1;
+                          });
+
+                          numberStream();
                         });
                         _stateflag = 0;
+
                       }
                     },
                     label: Text(
@@ -307,7 +333,7 @@ Widget build(BuildContext context) {
                     height: 100,
                     child: FittedBox(
                       child: FloatingActionButton(
-                        child: Icon(Icons.add),
+                        child: Icon(Icons.lock_open),
                         onPressed: () {
                           print(pickervalue.s);
                           writeData(pickervalue.s);
@@ -320,13 +346,6 @@ Widget build(BuildContext context) {
               ],
             ),],
           ),
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        startScan();
-      },
-      child: Icon(Icons.navigation),
-      backgroundColor: Colors.green,
     ),
   );
 }
