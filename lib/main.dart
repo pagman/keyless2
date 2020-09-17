@@ -1,12 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:hive/hive.dart';
+import 'package:keyless2/model/Device.dart';
 import 'screens/myHomePage.dart';
 import 'screens/myDevices.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
 final FlutterBlue flutterBlue = FlutterBlue.instance;
 
-void main() {
+void main()  async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
+  Hive.init(appDocumentDir.path);
+  Hive.registerAdapter(DeviceAdapter());
   runApp(MyApp());
+  final devicesBox = await Hive.openBox('devices');
 }
 
 class MyApp extends StatelessWidget {
@@ -26,5 +34,9 @@ class MyApp extends StatelessWidget {
 
       }
     );
+  }
+  @override
+  void dispose() {
+    Hive.close();
   }
 }
