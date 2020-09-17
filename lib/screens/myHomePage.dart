@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:hive/hive.dart';
+import 'package:keyless2/model/Device.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:slider_button/slider_button.dart';
@@ -32,6 +34,9 @@ class _MyHomePageState extends State<MyHomePage> {
   int _stateflag = 0;
   String connectionText = "";
   int _disable = 0;
+
+  final deviceBox = Hive.box('devices');
+  List<Device> mydevices = [];
 
   Stream<String> numberStream() async* {
     num distance = 0;
@@ -83,9 +88,23 @@ class _MyHomePageState extends State<MyHomePage> {
 //  }
 
   @override
-  void initState() {
+  initState() {
     super.initState();
+    initDevices();
     startScan();
+  }
+
+  initDevices() async {
+    final deviceBox = Hive.box('devices');
+    List<Device> mydevices = [];
+    for (var i in deviceBox.values){
+      mydevices.add(i);
+
+    }
+    print(mydevices[0].name);
+    print(mydevices[0].meters);
+    print(mydevices[0].approaching);
+    print(mydevices[0].auto);
   }
 
   startScan() {

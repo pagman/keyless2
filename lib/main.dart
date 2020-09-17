@@ -13,8 +13,9 @@ void main()  async {
   final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
   Hive.init(appDocumentDir.path);
   Hive.registerAdapter(DeviceAdapter());
+  await Hive.openBox('devices');
   runApp(MyApp());
-  final devicesBox = await Hive.openBox('devices');
+
 }
 
 class MyApp extends StatelessWidget {
