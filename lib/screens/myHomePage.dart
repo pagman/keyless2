@@ -34,6 +34,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _stateflag = 0;
   String connectionText = "";
   int _disable = 0;
+  List<String> mydevicesstr = [];
 
   final deviceBox = Hive.box('devices');
   List<Device> mydevices = [];
@@ -95,16 +96,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   initDevices() async {
+
+
     final deviceBox = Hive.box('devices');
     List<Device> mydevices = [];
-    for (var i in deviceBox.values){
+
+    if(deviceBox.isNotEmpty)
+    {for (var i in deviceBox.values){
       mydevices.add(i);
+      mydevicesstr.add(i.name);
+    }
+    for (int j=0;j<mydevices.length;j++){
+      print(j);
+      print(mydevices[j].name);
+      print(mydevices[j].meters);
+      print(mydevices[j].approaching);
+      print(mydevices[j].auto);
+    }
 
     }
-    print(mydevices[0].name);
-    print(mydevices[0].meters);
-    print(mydevices[0].approaching);
-    print(mydevices[0].auto);
   }
 
   startScan() {
@@ -184,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
             targetCharacteristic = characteristic;
             writeData("on3");
             setState(() {
-              connectionText = "All Ready with ${targetDevice.name}";
+              connectionText = "Connected: ${targetDevice.name}";
             });
           }
         });
@@ -200,11 +210,34 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    String _selectedLocation;
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: Text(connectionText),
-        backgroundColor: Color(0xffB8141F),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(50.0),
+        child: AppBar(
+          title: DropdownButton(
+            value: _selectedLocation,
+            onChanged: (newValue) {
+              setState(() {
+                _selectedLocation = newValue;
+              });
+            },
+            hint: Text(connectionText, style: TextStyle(color: Colors.white, fontSize: 20),),
+            items: mydevicesstr.map((location) {
+              return DropdownMenuItem(
+                child: new Text(location),
+                value: location,
+              );
+            }).toList(),
+            underline: SizedBox(height: 0,),
+            icon: Icon(Icons.arrow_drop_down),
+            iconSize: 42,
+            iconEnabledColor: Colors.white,
+
+          ),
+          backgroundColor: Color(0xffB8141F),
+        ),
       ),
       drawer: Drawer(
         // Add a ListView to the drawer. This ensures the user can scroll
@@ -282,77 +315,89 @@ class _MyHomePageState extends State<MyHomePage> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
+                      Column(
+                        children: [
+                          Text("Distance"),
+                          SizedBox(height: 20,),
+                          Center(
+                              child: StreamBuilder(
+                                  stream: numberStream(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasError)
+                                      return Text("Error");
+                                    else if (snapshot.connectionState ==
+                                        ConnectionState.waiting)
+                                      return CircularProgressIndicator();
+                                    return Text(
+                                      "${snapshot.data}",
+                                      style: Theme.of(context).textTheme.display1,
+                                    );
+                                  })),
+                        ],
+                      ),
+//                      Center(
+//                          child: SliderButton(
+//                        dismissible: false,
+//                        vibrationFlag: false,
+//                        action: () {
+//                          print(_stateflag);
+//                          if (_stateflag == 0) {
+//                            //writeData("off0");
+//                            setState(() {
+//                              _slidetext = "Slide to Enable";
+//                              _disable = 0;
+//                            });
+//                            _stateflag = 1;
+//                          } else if (_stateflag == 1) {
+//                            //writeData("on0");
+//                            setState(() {
+//                              _slidetext = "Slide to Disable";
+//                              disconnectFromDevice();
+//                              setState(() {
+//                                _disable = 1;
+//                              });
+//
+//                              numberStream();
+//                            });
+//                            _stateflag = 0;
+//                          }
+//                        },
+//                        label: Text(
+//                          _slidetext,
+//                          style: TextStyle(
+//                              color: Color(0xff4a4a4a),
+//                              fontWeight: FontWeight.w500,
+//                              fontSize: 17),
+//                        ),
+//                        icon: Text(
+//                          "x",
+//                          style: TextStyle(
+//                            color: Colors.black,
+//                            fontWeight: FontWeight.w400,
+//                            fontSize: 44,
+//                          ),
+//                        ),
+//                      )),
                       Center(
-                          child: StreamBuilder(
-                              stream: numberStream(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasError)
-                                  return Text("Error");
-                                else if (snapshot.connectionState ==
-                                    ConnectionState.waiting)
-                                  return CircularProgressIndicator();
-                                return Text(
-                                  "${snapshot.data}",
-                                  style: Theme.of(context).textTheme.display1,
-                                );
-                              })),
-                      Center(
-                          child: SliderButton(
-                        dismissible: false,
-                        vibrationFlag: false,
-                        action: () {
-                          print(_stateflag);
-                          if (_stateflag == 0) {
-                            //writeData("off0");
-                            setState(() {
-                              _slidetext = "Slide to Enable";
-                              _disable = 0;
-                            });
-                            _stateflag = 1;
-                          } else if (_stateflag == 1) {
-                            //writeData("on0");
-                            setState(() {
-                              _slidetext = "Slide to Disable";
-                              disconnectFromDevice();
-                              setState(() {
-                                _disable = 1;
-                              });
-
-                              numberStream();
-                            });
-                            _stateflag = 0;
-                          }
-                        },
-                        label: Text(
-                          _slidetext,
-                          style: TextStyle(
-                              color: Color(0xff4a4a4a),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 17),
-                        ),
-                        icon: Text(
-                          "x",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 44,
-                          ),
-                        ),
-                      )),
-                      Center(
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          child: FittedBox(
-                            child: FloatingActionButton(
-                              child: Icon(Icons.lock_open),
-                              onPressed: () {
-                                print(pickervalue.s);
-                                writeData(pickervalue.s);
-                              },
-                              backgroundColor: Color(0xffB8141F),
+                        child: Column(
+                          children: [
+                            Text("Push to Open"),
+                            SizedBox(height: 20,),
+                            Container(
+                              width: 150,
+                              height: 150,
+                              child: FittedBox(
+                                child: FloatingActionButton(
+                                  child: Icon(Icons.lock_open),
+                                  onPressed: () {
+                                    print(pickervalue.s);
+                                    writeData(pickervalue.s);
+                                  },
+                                  backgroundColor: Color(0xffB8141F),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
