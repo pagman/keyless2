@@ -34,7 +34,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _stateflag = 0;
   String connectionText = "";
   int _disable = 0;
-  List<String> mydevicesstr = [];
+  List<String> mydevicesstr = ['A','B'];
 
   final deviceBox = Hive.box('devices');
   List<Device> mydevices = [];
@@ -64,7 +64,6 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       });
 // Stop scanning
-
       yield distance.toString();
     }
 
@@ -96,11 +95,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   initDevices() async {
-
-
     final deviceBox = Hive.box('devices');
     List<Device> mydevices = [];
-
     if(deviceBox.isNotEmpty)
     {for (var i in deviceBox.values){
       mydevices.add(i);
@@ -113,7 +109,6 @@ class _MyHomePageState extends State<MyHomePage> {
       print(mydevices[j].approaching);
       print(mydevices[j].auto);
     }
-
     }
   }
 
@@ -328,6 +323,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                     else if (snapshot.connectionState ==
                                         ConnectionState.waiting)
                                       return CircularProgressIndicator();
+                                    else if (snapshot.data == null)
+                                      return Text("0 Meters", style: Theme.of(context).textTheme.display1,);
                                     return Text(
                                       "${snapshot.data}",
                                       style: Theme.of(context).textTheme.display1,
