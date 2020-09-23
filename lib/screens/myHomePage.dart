@@ -35,13 +35,9 @@ class _MyHomePageState extends State<MyHomePage> {
   String connectionText = "";
   int _disable = 1;
   List<String> mydevicesstr = ['A','B'];
-
+  Stream onExit; //declare Stream
   final deviceBox = Hive.box('devices');
   List<Device> mydevices = [];
-
-  Stream onExit;
-
-
 
   Stream<String> numberStream() async* {
     num distance = 0;
@@ -72,23 +68,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
-//  Stream<String> numberStream() async* {
-//    num distance = 0;
-//    flutterBlue.stopScan();
-//    stopScan();
-//    //print("saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-//    while (_disable == 1 ) {
-//      flutterBlue.stopScan();
-//      if(flag == 1)
-//      {
-//        startScan();
-//      }
-//      disconnectFromDevice();
-//      flag =0;
-//      yield distance.toString();
-//    }
-//
-//  }
 
   @override
   initState() {
@@ -119,22 +98,48 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       connectionText = "Start Scanning";
     });
-
-    var controller = new StreamController();
-    onExit = controller.stream;
     //while (true) {
       scanSubScription = flutterBlue.scan().listen((scanResult) {
         if (scanResult.device.name == TARGET_DEVICE_NAME) {
           print('DEVICE found');
-          print(scanResult.device.name);
+          stopScan();
+          setState(() {
+            connectionText = "Found Target Device";
+          });
+          setState(() {
+            targetDevice = scanResult.device;
+            connectToDevice();
+
+          });
+
           print(scanResult.rssi);
-          controller.add(scanResult.rssi.toString());
         }
       }, onDone: () => stopScan()
       );
     //}
 
     }
+
+//  startScan() {
+//    setState(() {
+//      connectionText = "Start Scanning";
+//    });
+//
+//    var controller = new StreamController(); //create stream controller
+//    onExit = controller.stream; //create stream onExit
+//    //while (true) {
+//    scanSubScription = flutterBlue.scan().listen((scanResult) {
+//      if (scanResult.device.name == TARGET_DEVICE_NAME) {
+//        print('DEVICE found');
+//        print(scanResult.device.name);
+//        print(scanResult.rssi);
+//        controller.add(scanResult.rssi.toString());
+//      }
+//    }, onDone: () => stopScan()
+//    );
+//    //}
+//
+//  }
 
 
   stopScan() {
@@ -303,21 +308,10 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Container(
         child: targetCharacteristic == null
             ? Center(
-                child: StreamBuilder(
-                    stream: onExit,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError)
-                        return Text("Error");
-                      else if (snapshot.connectionState ==
-                          ConnectionState.waiting)
-                        return CircularProgressIndicator();
-                      else if (snapshot.data == null)
-                        return Text("0 Meters", style: Theme.of(context).textTheme.display1,);
-                      return Text(
-                        "${snapshot.data}",
-                        style: Theme.of(context).textTheme.display1,
-                      );
-                    })
+                child: Text(
+                  "Waiting...",
+                  style: TextStyle(fontSize: 24, color: Colors.red),
+                ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
