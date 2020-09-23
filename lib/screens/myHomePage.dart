@@ -33,15 +33,18 @@ class _MyHomePageState extends State<MyHomePage> {
   String _slidetext = "Slide to Disable";
   int _stateflag = 0;
   String connectionText = "";
-  int _disable = 0;
+  int _disable = 1;
   List<String> mydevicesstr = ['A','B'];
 
   final deviceBox = Hive.box('devices');
   List<Device> mydevices = [];
 
+  Stream onExit;
+
+
+
   Stream<String> numberStream() async* {
     num distance = 0;
-
     //print("saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     while (_disable == 1) {
       await Future.delayed(Duration(seconds: 4));
@@ -116,21 +119,16 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       connectionText = "Start Scanning";
     });
+
+    var controller = new StreamController();
+    onExit = controller.stream;
     //while (true) {
       scanSubScription = flutterBlue.scan().listen((scanResult) {
         if (scanResult.device.name == TARGET_DEVICE_NAME) {
           print('DEVICE found');
-          stopScan();
-          setState(() {
-            connectionText = "Found Target Device";
-          });
-          setState(() {
-            targetDevice = scanResult.device;
-            connectToDevice();
-
-          });
-
+          print(scanResult.device.name);
           print(scanResult.rssi);
+          controller.add(scanResult.rssi.toString());
         }
       }, onDone: () => stopScan()
       );
@@ -173,6 +171,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   discoverServices() async {
     if (targetDevice == null) return;
+
+//    FlutterBlue.instance.connectedDevices.then((deviceList){
+//      deviceList.forEach((d) async {
+//        print("RSSI from device "+d.rssi.toString());
+//      });
+//    });
 
     List<BluetoothService> services = await targetDevice.discoverServices();
     services.forEach((service) {
@@ -299,10 +303,21 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Container(
         child: targetCharacteristic == null
             ? Center(
-                child: Text(
-                  "Waiting...",
-                  style: TextStyle(fontSize: 24, color: Colors.red),
-                ),
+                child: StreamBuilder(
+                    stream: onExit,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError)
+                        return Text("Error");
+                      else if (snapshot.connectionState ==
+                          ConnectionState.waiting)
+                        return CircularProgressIndicator();
+                      else if (snapshot.data == null)
+                        return Text("0 Meters", style: Theme.of(context).textTheme.display1,);
+                      return Text(
+                        "${snapshot.data}",
+                        style: Theme.of(context).textTheme.display1,
+                      );
+                    })
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
