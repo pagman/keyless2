@@ -120,26 +120,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
     }
 
-//  startScan() {
-//    setState(() {
-//      connectionText = "Start Scanning";
-//    });
-//
-//    var controller = new StreamController(); //create stream controller
-//    onExit = controller.stream; //create stream onExit
-//    //while (true) {
-//    scanSubScription = flutterBlue.scan().listen((scanResult) {
-//      if (scanResult.device.name == TARGET_DEVICE_NAME) {
-//        print('DEVICE found');
-//        print(scanResult.device.name);
-//        print(scanResult.rssi);
-//        controller.add(scanResult.rssi.toString());
-//      }
-//    }, onDone: () => stopScan()
-//    );
-//    //}
-//
-//  }
+  rssiStream() {
+    print(",mpikeeeeeee");
+    var controller = new StreamController(); //create stream controller
+    onExit = controller.stream; //create stream onExit
+    //while (true) {
+    flutterBlue.stopScan();
+    print('stoped');
+    scanSubScription = flutterBlue.scan().listen((scanResult) {
+      if (scanResult.device.name == TARGET_DEVICE_NAME) {
+        print('DEVICE found');
+        print(scanResult.device.name);
+        print(scanResult.rssi);
+        controller.add(scanResult.rssi.toString());
+      }
+    }
+    );
+    //}
+
+  }
 
 
   stopScan() {
@@ -197,9 +196,14 @@ class _MyHomePageState extends State<MyHomePage> {
           if (characteristic.uuid.toString() == CHARACTERISTIC_UUID) {
             targetCharacteristic = characteristic;
             writeData("on3");
+            stopScan();
+            discoverServices();
+            disconnectFromDevice();
+
             setState(() {
               connectionText = "Connected: ${targetDevice.name}";
             });
+            rssiStream();
           }
         });
       }
@@ -325,7 +329,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           SizedBox(height: 20,),
                           Center(
                               child: StreamBuilder(
-                                  stream: numberStream(),
+                                  stream: onExit,
                                   builder: (context, snapshot) {
                                     if (snapshot.hasError)
                                       return Text("Error");
