@@ -29,7 +29,7 @@ class _myDevicesState extends State<myDevices> {
 
   void addDevice(int index, Device device){
     final deviceBox = Hive.box('devices');
-    deviceBox.put(index,device);
+    deviceBox.put(device.name,device);
     print('Name: ${deviceBox.get(index).name} Meters: ${deviceBox.get(index).meters} Approaching: ${deviceBox.get(index).approaching} Auto: ${deviceBox.get(index).auto} ');
     //print('Name: ${device.name},Meters: ${device.meters} Approaching: ${device.approaching} Auto: ${device.auto} ');
   }
@@ -63,7 +63,7 @@ class _myDevicesState extends State<myDevices> {
                         var index = snapshot.data.indexOf(r);
                         print(index);
                         print("skata");
-                        showPicker(context);
+                        //showPicker(context);
                         setState(() {
                           _visible = false;
                         });
@@ -107,6 +107,7 @@ class _myDevicesState extends State<myDevices> {
                                   onPressed: () {
                                     var index = snapshot.data.indexOf(r);
                                     print(index);
+                                    showPicker(context);
                                     print("delete");
                                   },
                                 ),

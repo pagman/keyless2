@@ -38,6 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Stream onExit; //declare Stream
   final deviceBox = Hive.box('devices');
   List<Device> mydevices = [];
+  String _selectedDropDownItem="asd";
 
   Stream<String> numberStream() async* {
     num distance = 0;
@@ -100,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
     //while (true) {
       scanSubScription = flutterBlue.scan().listen((scanResult) {
-        if (scanResult.device.name == TARGET_DEVICE_NAME) {
+        if (scanResult.device.name.contains(TARGET_DEVICE_NAME)) {
           print('DEVICE found');
           stopScan();
           setState(() {
@@ -121,6 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
   rssiStream() {
+    num distance = 0;
     print(",mpikeeeeeee");
     var controller = new StreamController(); //create stream controller
     onExit = controller.stream; //create stream onExit
@@ -129,10 +131,20 @@ class _MyHomePageState extends State<MyHomePage> {
     print('stoped');
     scanSubScription = flutterBlue.scan().listen((scanResult) {
       if (scanResult.device.name == TARGET_DEVICE_NAME) {
-        print('DEVICE found');
-        print(scanResult.device.name);
-        print(scanResult.rssi);
-        controller.add(scanResult.rssi.toString());
+        //print('DEVICE found');
+        //print(scanResult.device.name);
+        //print(scanResult.rssi);
+        distance = pow(10.0, ((-69.0 - scanResult.rssi) / (10 * 2)));
+        controller.add(distance.toStringAsFixed(3)+' Meters');
+        //print(_selectedDropDownItem);
+        if(_selectedDropDownItem.contains(TARGET_DEVICE_NAME)){
+          print(deviceBox.get(_selectedDropDownItem).meters);
+        }
+        if(scanResult.device.name.contains(TARGET_DEVICE_NAME)){
+          print(deviceBox.get(scanResult.device.name).name);
+          print(deviceBox.get(scanResult.device.name).auto);
+          print(deviceBox.get(scanResult.device.name).meters);
+        }
       }
     }
     );
@@ -218,17 +230,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    String _selectedLocation;
+    String _selectedDropDownItem1;
     return Scaffold(
       key: _scaffoldKey,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(50.0),
         child: AppBar(
           title: DropdownButton(
-            value: _selectedLocation,
+            value: _selectedDropDownItem1,
             onChanged: (newValue) {
               setState(() {
-                _selectedLocation = newValue;
+                print(newValue);
+                _selectedDropDownItem = newValue;
+                print(_selectedDropDownItem);
               });
             },
             hint: Text(connectionText, style: TextStyle(color: Colors.white, fontSize: 20),),
@@ -258,7 +272,7 @@ class _MyHomePageState extends State<MyHomePage> {
             DrawerHeader(
               child: new Center(
                   child: new Text(
-                "Settings",
+                    'Settings',
                 style: new TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 15.0,
